@@ -1,14 +1,8 @@
 from django.db import models
-from django.contrib.auth.base_user import BaseUserManager
-from django.contrib.auth.models import AbstractUser, Permission, Group
-from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.utils.translation import gettext_lazy as _
 from django_rest_passwordreset.tokens import get_token_generator
 
-USER_TYPE_CHOICES = [
-    ('seller', 'Seller'),
-    ('buyer', 'Buyer')
-]
 
 STATUS_CHOICES = (
     ('cart', 'In cart'),
@@ -22,27 +16,45 @@ STATUS_CHOICES = (
 
 
 class UserManager(BaseUserManager):
-    use_in_migrations = True
-
-    def _create_user(self, email, password, **extra_fields):
-        """
-        Create and save a user with the given username, email, and password.
-        """
+    def _create_user(self, email, password, first_name, last_name, **extra_fields):
         if not email:
             raise ValueError("The given email must be set")
+        if not password:
+            raise ValueError("The given password must be set")
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        user = self.model(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            **extra_fields
+        )
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_user(self, email=None, password=None, **extra_fields):
+    def create_user(
+            self,
+            email=None,
+            password=None,
+            first_name=None,
+            last_name=None,
+            **extra_fields
+    ):
         extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault('is_active', True)
         extra_fields.setdefault("is_superuser", False)
-        return self._create_user(email, password, **extra_fields)
+        return self._create_user(email, password, first_name, last_name, **extra_fields)
 
-    def create_superuser(self, email=None, password=None, **extra_fields):
+    def create_superuser(
+            self,
+            email=None,
+            password=None,
+            first_name=None,
+            last_name=None,
+            **extra_fields
+    ):
         extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault('is_active', True)
         extra_fields.setdefault("is_superuser", True)
 
         if extra_fields.get("is_staff") is not True:
@@ -50,43 +62,22 @@ class UserManager(BaseUserManager):
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
 
-        return self._create_user(email, password, **extra_fields)
+        return self._create_user(email, password, first_name, last_name, **extra_fields)
 
 
-class User(AbstractUser):
-    REQUIRED_FIELDS = ['email']
+class User(AbstractBaseUser, PermissionsMixin):
+    email = models.EmailField(db_index=True, unique=True, max_length=255)
+    first_name = models.CharField(max_length=240)
+    last_name = models.CharField(max_length=240)
+
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_superuser = models.BooleanField(default=False)
+
     objects = UserManager()
+
     USERNAME_FIELD = 'email'
-    email = models.EmailField(_('email address'), unique=True)
-    company = models.CharField(verbose_name='Company', max_length=40, blank=True)
-    position = models.CharField(verbose_name='Occupation', max_length=40, blank=True)
-    username_validator = UnicodeUsernameValidator()
-    user_permissions = models.ManyToManyField(
-        Permission,
-        verbose_name=_("user permissions"),
-        blank=True,
-        help_text=_("Specific permissions for this user."),
-        related_name="%(app_label)s_%(class)s_permissions_set",  # Change related_name
-        related_query_name="user",
-    )
-    username = models.CharField(
-        _('username'),
-        max_length=128,
-        help_text='Required. 128 characters or less. Letters, digits and @/./+/-/_ only.',
-        validators=[username_validator],
-        error_messages={
-            'unique': _("User with this name already exists.")
-        },
-    )
-    is_active = models.BooleanField(
-        _("active"),
-        default=True,
-        help_text=_(
-            "Designates whether this user should be treated as active. "
-            "Unselect this instead of deleting accounts."
-        ),
-    )
-    type = models.CharField(verbose_name='User type', max_length=50, choices=USER_TYPE_CHOICES)
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
     groups = models.ManyToManyField(
         Group,
@@ -96,12 +87,18 @@ class User(AbstractUser):
             'The groups this user belongs to. A user will get all permissions '
             'granted to each of their groups.'
         ),
-        related_name="%(app_label)s_%(class)s_related",
+        related_name="user_groups",
         related_query_name="user",
     )
 
-    def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+    user_permissions = models.ManyToManyField(
+        Permission,
+        verbose_name=_("user permissions"),
+        blank=True,
+        help_text=_("Specific permissions for this user."),
+        related_name="user_permissions",
+        related_query_name="user",
+    )
 
     class Meta:
         ordering = ('email',)

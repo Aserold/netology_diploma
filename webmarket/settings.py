@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'suppliers',
     'rest_framework',
-    'django_rest_passwordreset',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -84,9 +84,12 @@ DATABASES = {
         "USER": DB_USER,
         "PASSWORD": DB_PASSWORD,
         "HOST": "127.0.0.1",
-        "PORT": "5432",
+        "PORT": "5431",
     }
 }
+
+
+AUTH_USER_MODEL = "suppliers.User"
 
 
 # Password validation

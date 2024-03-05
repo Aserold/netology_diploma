@@ -4,5 +4,5 @@ import os
 
 load_dotenv()
 
-DB_PASSWORD = os.environ.get('DB_PASSWORD')
-DB_USER = os.environ.get('DB_USER')
+DB_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
+DB_USER = os.environ.get('POSTGRES_USER')
