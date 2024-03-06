@@ -69,6 +69,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(db_index=True, unique=True, max_length=255)
     first_name = models.CharField(max_length=240)
     last_name = models.CharField(max_length=240)
+    type = models.CharField(choices=[('buyer', 'Buyer'), ('seller', 'Seller')])
 
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
