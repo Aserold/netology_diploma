@@ -144,6 +144,8 @@ class Product(models.Model):
 
 
 class ProductInfo(models.Model):
+    model = models.CharField(max_length=128, blank=True)
+    external_id = models.PositiveIntegerField(verbose_name='External id')
     product = models.ForeignKey(Product, related_name='product_info', blank=True, on_delete=models.CASCADE)
     shop = models.ForeignKey(Shop, related_name='product_info', blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=128)
@@ -152,10 +154,8 @@ class ProductInfo(models.Model):
     price_rrp = models.PositiveIntegerField(verbose_name='Recommended price')
 
     class Meta:
-        verbose_name = 'Product information'
-        verbose_name_plural = "Product information list"
         constraints = [
-            models.UniqueConstraint(fields=['product', 'shop'], name='unique_product_info'),
+            models.UniqueConstraint(fields=['product', 'shop', 'external_id'], name='unique_product_info'),
         ]
 
 
@@ -170,11 +170,11 @@ class Parameter(models.Model):
 
 
 class ProductParameter(models.Model):
-    product_info = models.OneToOneField(
+    product_info = models.ForeignKey(
         ProductInfo, related_name='product_parameters',
         blank=True, on_delete=models.CASCADE
     )
-    parameter = models.OneToOneField(
+    parameter = models.ForeignKey(
         Parameter, related_name='product_parameters',
         blank=True, on_delete=models.CASCADE
     )
