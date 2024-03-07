@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User
+from .models import User, ProductInfo, Product, ProductParameter
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -33,3 +33,28 @@ class LoginSerializer(serializers.Serializer):
                 raise serializers.ValidationError("Unable to log in with provided credentials.")
         else:
             raise serializers.ValidationError("Must include 'email' and 'password'.")
+
+
+class ProductParameterSerializer(serializers.ModelSerializer):
+    parameter = serializers.StringRelatedField()
+
+    class Meta:
+        model = ProductParameter
+        fields = ['parameter', 'value']
+
+
+class ProductInfoSerializer(serializers.ModelSerializer):
+    shop = serializers.StringRelatedField()
+    product_parameters = ProductParameterSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ProductInfo
+        fields = ['name', 'shop', 'product_parameters', 'price', 'quantity']
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    product_info = ProductInfoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Product
+        fields = ['name', 'product_info']

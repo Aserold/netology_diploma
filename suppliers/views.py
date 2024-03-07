@@ -1,15 +1,12 @@
 import json
-from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework_yaml.parsers import YAMLParser
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
 
-from .serializers import UserSerializer, LoginSerializer
+from .serializers import UserSerializer, LoginSerializer, ProductSerializer
 from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter
 
 
@@ -58,34 +55,39 @@ class YAMLLoadView(APIView):
         if request.user.type != 'seller':
             return Response({'Error': 'Available only for sellers'})
 
-        # try:
-        data = request.data
-        shop, created = Shop.objects.get_or_create(name=data['shop'], user_id=request.user.id)
+        try:
+            data = request.data
+            shop, created = Shop.objects.get_or_create(name=data['shop'], user_id=request.user.id)
 
-        for category in data['categories']:
-            category_object, created = Category.objects.get_or_create(id=category['id'], name=category['name'])
-            category_object.shops.add(shop.id)
-            category_object.save()
+            for category in data['categories']:
+                category_object, created = Category.objects.get_or_create(id=category['id'], name=category['name'])
+                category_object.shops.add(shop.id)
+                category_object.save()
 
-        for item in data['goods']:
-            product, created = Product.objects.get_or_create(name=item['name'], category_id=item['category'])
+            for item in data['goods']:
+                product, created = Product.objects.get_or_create(name=item['name'], category_id=item['category'])
 
-            product_info = ProductInfo.objects.create(
-                product_id=product.id,
-                external_id=item['id'],
-                model=item['model'],
-                name=item['name'],
-                price=item['price'],
-                price_rrp=item['price_rrc'],
-                quantity=item['quantity'],
-                shop_id=shop.id
-            )
-            for name, value in item['parameters'].items():
-                parameter_object, _ = Parameter.objects.get_or_create(name=name)
-                ProductParameter.objects.create(product_info_id=product_info.id,
-                                                parameter_id=parameter_object.id,
-                                                value=value)
-        # except Exception as e:
-        #     return Response({'Status': 'Failed', 'Exception': str(e)})
+                product_info = ProductInfo.objects.create(
+                    product_id=product.id,
+                    external_id=item['id'],
+                    model=item['model'],
+                    name=item['name'],
+                    price=item['price'],
+                    price_rrp=item['price_rrc'],
+                    quantity=item['quantity'],
+                    shop_id=shop.id
+                )
+                for name, value in item['parameters'].items():
+                    parameter_object, _ = Parameter.objects.get_or_create(name=name)
+                    ProductParameter.objects.create(product_info_id=product_info.id,
+                                                    parameter_id=parameter_object.id,
+                                                    value=value)
+        except Exception as e:
+            return Response({'Status': 'Failed', 'Exception': str(e)})
 
         return Response({'Status': 'OK', 'data': data})
+
+
+class ProductListView(ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
