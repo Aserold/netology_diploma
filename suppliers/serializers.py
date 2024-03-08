@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, ProductInfo, Product, ProductParameter
+from .models import User, ProductInfo, Product, ProductParameter, Contact
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -58,3 +58,16 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['name', 'product_info']
+
+
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = [
+            'id', 'last_name', 'first_name', 'surname', 'email', 'phone', 'city', 'street', 'building', 'housing', 'structure', 'apartment', 'user'
+        ]
+        read_only_fields = ['id']
+        extra_kwargs = {
+            'user': {'write_only': True}
+        }
+

@@ -6,8 +6,8 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework_yaml.parsers import YAMLParser
 
-from .serializers import UserSerializer, LoginSerializer, ProductSerializer
-from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter
+from .serializers import UserSerializer, LoginSerializer, ProductSerializer, ContactSerializer
+from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Contact
 
 
 class RegisterView(generics.CreateAPIView):
@@ -91,3 +91,46 @@ class YAMLLoadView(APIView):
 class ProductListView(ListAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+
+class ContactView(APIView):
+
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({'Status': 'Failed', 'Error': 'Please register or login'})
+
+        queryset = Contact.objects.filter(user_id=request.user.id)
+        serializer = ContactSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return Response({'Status': 'Failed', 'Error': 'Please register or login'})
+
+        if {'first_name', 'city', 'street', 'phone'}.issubset(request.data):
+            request.data.update({'user': request.user.id})
+            serializer = ContactSerializer(data=request.data)
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'Status': 'Success'})
+            else:
+                return Response({'Status': 'Failed', 'Error': serializer.errors})
+        else:
+            return Response({'Status': 'Failed', 'Error': 'Please add required fields'})
+
+    def delete(self, request):
+        if not request.user.is_authenticated:
+            return Response({'Status': 'Failed', 'Error': 'Please register or login'})
+
+        id = request.data.get('id')
+        if not id:
+            return Response({'Status': 'Failed', 'Error': 'No id provided'})
+
+        try:
+            contact = Contact.objects.get(id=id, user_id=request.user.id)
+        except Contact.DoesNotExist:
+            return Response({'Status': 'Failed', 'Error': 'Contact not found'})
+
+        contact.delete()
+        return Response({'Status': 'Success', 'Message': 'Contact deleted successfully'})

@@ -182,13 +182,22 @@ class ProductParameter(models.Model):
 
 
 class Contact(models.Model):
-    type = models.CharField(max_length=50, verbose_name='Type')
     user = models.ForeignKey(
         User, verbose_name='User',
         related_name='contacts', blank=True,
         on_delete=models.CASCADE
     )
-    value = models.CharField(max_length=128)
+    last_name = models.CharField(max_length=128)
+    first_name = models.CharField(max_length=128)
+    surname = models.CharField(max_length=128, blank=True)
+    email = models.EmailField(max_length=255)
+    city = models.CharField(max_length=50)
+    street = models.CharField(max_length=100)
+    building = models.CharField(max_length=15, blank=True)
+    housing = models.CharField(max_length=15, blank=True)
+    structure = models.CharField(max_length=15, blank=True)
+    apartment = models.CharField(max_length=15, blank=True)
+    phone = models.CharField(max_length=20)
 
 
 class Order(models.Model):
